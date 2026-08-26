@@ -38,7 +38,7 @@ trait Parameters {
 	 */
 	private array $cache_settings = [
 		'enabled'    => true,
-		'expiration' => DAY_IN_SECONDS
+		'expiration' => DAY_IN_SECONDS,
 	];
 
 	/** API Key ******************************************************************/
@@ -125,5 +125,4 @@ trait Parameters {
 	public function get_cache_settings(): array {
 		return $this->cache_settings;
 	}
-
 }

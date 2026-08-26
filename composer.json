@@ -1,10 +1,9 @@
 {
-  "name": "arraypress/google-geocoding",
-  "version": "1.0.0",
+  "name": "arraypress/wp-google-geocoding",
   "description": "A PHP library for integrating with the Google Geocoding API in WordPress, providing address to coordinate conversion and structured address information. Features WordPress transient caching and WP_Error support.",
   "type": "library",
   "license": "GPL-2.0-or-later",
-  "homepage": "https://github.com/arraypress/google-geocoding/",
+  "homepage": "https://github.com/arraypress/wp-google-geocoding/",
   "authors": [
     {
       "name": "David Sherlock",
@@ -12,7 +11,7 @@
     }
   ],
   "require": {
-    "php": ">=7.4"
+    "php": ">=8.3"
   },
   "autoload": {
     "psr-4": {
@@ -22,13 +21,16 @@
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true,
-    "preferred-install": "dist"
+    "preferred-install": "dist",
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "support": {
-    "issues": "https://github.com/arraypress/google-geocoding/issues",
-    "source": "https://github.com/arraypress/google-geocoding"
+    "issues": "https://github.com/arraypress/wp-google-geocoding/issues",
+    "source": "https://github.com/arraypress/wp-google-geocoding"
   },
   "keywords": [
     "geocoding",
@@ -43,5 +45,17 @@
     "geolocation",
     "mapping",
     "address-parsing"
-  ]
+  ],
+  "require-dev": {
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "phpunit/phpunit": "^12.0",
+    "squizlabs/php_codesniffer": "^3.13.5",
+    "wp-coding-standards/wpcs": "^3.4"
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "phpcs",
+    "format": "phpcbf --standard=phpcs-format.xml.dist",
+    "format:check": "phpcs --standard=phpcs-format.xml.dist"
+  }
 }

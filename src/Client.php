@@ -13,6 +13,7 @@ declare( strict_types=1 );
 
 namespace ArrayPress\Google\Geocoding;
 
+use ArrayPress\Google\Geocoding\Traits\FailureCache;
 use ArrayPress\Google\Geocoding\Traits\Parameters;
 use WP_Error;
 
@@ -22,6 +23,7 @@ use WP_Error;
  * A comprehensive utility class for interacting with the Google Geocoding API.
  */
 class Client {
+	use FailureCache;
 	use Parameters;
 
 	/**
@@ -61,9 +63,15 @@ class Client {
 			}
 		}
 
+		if ( $this->recently_failed( $cache_key ) ) {
+			return $this->recent_failure_error();
+		}
+
 		$response = $this->make_request( [ 'address' => $address ] );
 
 		if ( is_wp_error( $response ) ) {
+			$this->cache_failure( $cache_key );
+
 			return $response;
 		}
 
@@ -92,9 +100,15 @@ class Client {
 			}
 		}
 
+		if ( $this->recently_failed( $cache_key ) ) {
+			return $this->recent_failure_error();
+		}
+
 		$response = $this->make_request( [ 'latlng' => "{$lat},{$lng}" ] );
 
 		if ( is_wp_error( $response ) ) {
+			$this->cache_failure( $cache_key );
+
 			return $response;
 		}
 
@@ -119,13 +133,14 @@ class Client {
 
 		$response = wp_remote_get( $url, [
 			'timeout' => 15,
-			'headers' => [ 'Accept' => 'application/json' ]
+			'headers' => [ 'Accept' => 'application/json' ],
 		] );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'api_error',
 				sprintf(
+					/* translators: %s: the error message returned by WP_Http. */
 					__( 'Geocoding API request failed: %s', 'arraypress' ),
 					$response->get_error_message()
 				)
@@ -142,10 +157,18 @@ class Client {
 			);
 		}
 
-		if ( $data['status'] !== 'OK' && $data['status'] !== 'ZERO_RESULTS' ) {
+		if ( ! is_array( $data ) || ! isset( $data['status'] ) ) {
+			return new WP_Error(
+				'json_error',
+				__( 'Geocoding API response was not in the expected shape.', 'arraypress' )
+			);
+		}
+
+		if ( 'OK' !== $data['status'] && 'ZERO_RESULTS' !== $data['status'] ) {
 			return new WP_Error(
 				'api_error',
 				sprintf(
+					/* translators: %s: the status Google returned, such as REQUEST_DENIED. */
 					__( 'Geocoding API returned error: %s', 'arraypress' ),
 					$data['status']
 				)
@@ -179,14 +202,28 @@ class Client {
 		}
 
 		global $wpdb;
-		$pattern = $wpdb->esc_like( '_transient_google_geocoding_' ) . '%';
 
-		return $wpdb->query(
-				$wpdb->prepare(
-					"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
-					$pattern
-				)
-			) !== false;
+		/*
+		 * Find the names, then let delete_transient() do the deleting.
+		 *
+		 * A raw DELETE on _transient_google_geocoding_% leaves every matching
+		 * _transient_timeout_google_geocoding_% row behind -- those do not
+		 * carry the prefix, so the LIKE never sees them and each cached lookup
+		 * orphans one options row, permanently. delete_transient() removes both
+		 * halves, fires the delete_transient_* hooks, and clears the entry from
+		 * an external object cache, none of which a raw DELETE does.
+		 */
+		$like = $wpdb->esc_like( '_transient_google_geocoding_' ) . '%';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$names = $wpdb->get_col(
+			$wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $like )
+		);
+
+		foreach ( (array) $names as $name ) {
+			delete_transient( substr( (string) $name, strlen( '_transient_' ) ) );
+		}
+
+		return true;
 	}
-
 }

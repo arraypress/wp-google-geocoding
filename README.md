@@ -17,9 +17,38 @@ A PHP library for integrating with the Google Geocoding API in WordPress, provid
 - 📋 **Multiple Result Types**: Handle various location types
 - ✨ **Plus Code Support**: Access global and compound plus codes
 
+## Measuring Distance
+
+The reason to geocode an order in the first place: compare where the billing
+address is against where the request came from.
+
+```php
+use ArrayPress\Google\Geocoding\Client;
+use ArrayPress\Google\Geocoding\Distance;
+
+$billing = ( new Client( $api_key ) )->geocode( $order->get_billing_address() );
+
+if ( ! is_wp_error( $billing ) ) {
+    $km = Distance::between_points(
+        $billing->get_coordinates(),          // [ 'latitude' => .., 'longitude' => .. ]
+        [ 'lat' => $ip_lat, 'lng' => $ip_lng ] // whatever your IP lookup returned
+    );
+
+    if ( null !== $km && $km > 500 ) {
+        // Worth a look.
+    }
+}
+```
+
+`Distance::between()` takes four floats if you already have them, and
+`between_points()` takes two arrays keyed either `lat`/`lng` or
+`latitude`/`longitude`, so it composes with `get_coordinates()` directly.
+Pass `'mi'` as the last argument for miles.
+
+
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 8.3 or later
 - WordPress 5.0 or later
 - Google Geocoding API key
 
@@ -28,7 +57,7 @@ A PHP library for integrating with the Google Geocoding API in WordPress, provid
 Install via Composer:
 
 ```bash
-composer require arraypress/google-geocoding
+composer require arraypress/wp-google-geocoding
 ```
 
 ## Basic Usage
@@ -236,5 +265,5 @@ This project is licensed under the GPL-2.0-or-later License.
 
 ## Support
 
-- [Documentation](https://github.com/arraypress/google-geocoding)
-- [Issue Tracker](https://github.com/arraypress/google-geocoding/issues)
+- [Documentation](https://github.com/arraypress/wp-google-geocoding)
+- [Issue Tracker](https://github.com/arraypress/wp-google-geocoding/issues)

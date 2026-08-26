@@ -84,7 +84,7 @@ class Response {
 		if ( isset( $result['geometry']['location'] ) ) {
 			return [
 				'latitude'  => $result['geometry']['location']['lat'],
-				'longitude' => $result['geometry']['location']['lng']
+				'longitude' => $result['geometry']['location']['lng'],
 			];
 		}
 
@@ -211,7 +211,7 @@ class Response {
 	public function get_address_component( string $type ): ?string {
 		$components = $this->get_address_components();
 		foreach ( $components as $component ) {
-			if ( in_array( $type, $component['types'] ) ) {
+			if ( in_array( $type, $component['types'], true ) ) {
 				return $component['long_name'];
 			}
 		}
@@ -229,7 +229,7 @@ class Response {
 	public function get_address_component_short( string $type ): ?string {
 		$components = $this->get_address_components();
 		foreach ( $components as $component ) {
-			if ( in_array( $type, $component['types'] ) ) {
+			if ( in_array( $type, $component['types'], true ) ) {
 				return $component['short_name'];
 			}
 		}
@@ -390,7 +390,7 @@ class Response {
 			'postal_code'       => $this->get_postal_code(),
 			'country'           => $this->get_country(),
 			'country_short'     => $this->get_country_short(),
-			'formatted_address' => $this->get_formatted_address()
+			'formatted_address' => $this->get_formatted_address(),
 		];
 	}
 
@@ -411,8 +411,8 @@ class Response {
 	public function is_business_location(): bool {
 		$types = $this->get_types();
 
-		return in_array( 'establishment', $types ) ||
-		       in_array( 'point_of_interest', $types );
+		return in_array( 'establishment', $types, true ) ||
+				in_array( 'point_of_interest', $types, true );
 	}
 
 	/**
@@ -436,5 +436,4 @@ class Response {
 	public function iterate_results( callable $callback ): array {
 		return array_map( $callback, $this->get_results() );
 	}
-
 }
